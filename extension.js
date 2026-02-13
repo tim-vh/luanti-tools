@@ -76,6 +76,18 @@ function isLuantiGameRoot() {
     return fs.existsSync(luantiExeFilePath);
 }
 
+function getGameFolders() {
+    var gamesFilePath = path.join(rootPath, "games");
+    if (fs.existsSync(gamesFilePath))
+    {
+        return fs.readdirSync(gamesFilePath, { withFileTypes: true })
+                .filter(directory => directory.isDirectory())
+                .map(directory => '/games/' + directory.name)
+    }
+
+    return [];
+}
+
 function activate(context) {
     // Intellisense
     let completion = vscode.languages.registerCompletionItemProvider(
@@ -151,9 +163,23 @@ function activate(context) {
     // Mod boilerplate
     let modproject = vscode.commands.registerCommand(
         "extension.modProject",
-        () => {
+        async () => {
             if (rootPath == "") return;
-            const name = vscode.workspace.name;
+            let name = vscode.workspace.name;
+            let subfolder = '';
+
+            if (isLuantiGameRoot()) {
+                let gameModFolders = getGameFolders().map(f => path.join(f, 'mods'));
+
+                subfolder = await vscode.window.showQuickPick([...gameModFolders, '/mods'], {title: 'Where do you want to create te mod'})
+
+                name = await vscode.window.showInputBox({
+                    prompt: "Enter name of the mod",
+                    value: "",
+                });
+                subfolder = path.join(subfolder,name);
+            }
+
             const files = [
                 {
                     name: "init.lua",
@@ -177,7 +203,7 @@ function activate(context) {
                 },
             ];
             const folders = ["textures", "models", "sounds"];
-            makeFiles(files, folders);
+            makeFiles(files, folders, subfolder);
         },
     );
 
