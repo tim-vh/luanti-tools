@@ -1,12 +1,15 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
+const child_process = require('child_process');
 const snippets = require("./smartsnippets.json");
 
 const rootPath =
     vscode.workspace.workspaceFolders != undefined
         ? vscode.workspace.workspaceFolders[0].uri.fsPath
         : "";
+
+const luantiExeFilePath = path.join(rootPath, 'bin', 'luanti.exe');        
 const doc_api_link = // TODO: Fetch latest version from a config so we arent modifying code for API version bumps
     "\n\n[View in lua_api.md](https://github.com/luanti-org/luanti/blob/5.11.0/doc/lua_api.md?plain=1#";
 const luacheckrc = `read_globals = {
@@ -71,8 +74,7 @@ function makeFiles(files, folders, subfolder = '') {
 }
 
 function isLuantiGameRoot() {
-    // TODO: other check required for non windows
-    var luantiExeFilePath = path.join(rootPath, 'bin', 'luanti.exe');
+    // TODO: other check required for non windows    
     return fs.existsSync(luantiExeFilePath);
 }
 
@@ -281,6 +283,27 @@ function activate(context) {
                     ? "Luanti Intellisense active in workspace only."
                     : "Luanti Intellisense active for all Lua files.",
             );
+        },
+    );
+
+    // Start Luanti game
+    let startLuantiGame = vscode.commands.registerCommand(
+        "extension.startLuantiGame",
+        () => {
+            if(isLuantiGameRoot()) {
+                vscode.window.showInformationMessage('starting luanti game');
+
+                // TODO: other file for non windows
+                child_process.execFile(luantiExeFilePath, null, (error, stdout, stderr) => {
+                    if (error) {
+                        vscode.window.showErrorMessage(`Error: ${error.message}`);
+                        return;
+                    }
+                });
+            }
+            else {
+                vscode.window.showErrorMessage('Could not find luanti executable');
+            }
         },
     );
 

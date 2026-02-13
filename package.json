@@ -61,6 +61,10 @@
             {
                 "command": "extension.workspaceToggle",
                 "title": "Luanti Tools: Toggle Workspace Intellisense"
+            },
+            {
+                "command": "extension.startLuantiGame",
+                "title": "Luanti Tools: Start Luanti game"
             }
         ],
         "configuration": [
