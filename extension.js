@@ -55,19 +55,25 @@ const luacheckrc = `read_globals = {
     },
 }`;
 
-function makeFiles(files, folders) {
+function makeFiles(files, folders, subfolder = '') {
     for (const folder of folders) {
-        const fullpath = path.join(rootPath, folder);
+        const fullpath = path.join(rootPath, subfolder, folder);
         if (!fs.existsSync(fullpath)) {
-            fs.mkdirSync(fullpath);
+            fs.mkdirSync(fullpath, {recursive: true});
         }
     }
     for (const file of files) {
-        const fullpath = path.join(rootPath, file.name);
+        const fullpath = path.join(rootPath, subfolder, file.name);
         if (!fs.existsSync(fullpath)) {
             fs.writeFileSync(fullpath, file.content);
         }
     }
+}
+
+function isLuantiGameRoot() {
+    // TODO: other check required for non windows
+    var luantiExeFilePath = path.join(rootPath, 'bin', 'luanti.exe');
+    return fs.existsSync(luantiExeFilePath);
 }
 
 function activate(context) {
@@ -178,9 +184,21 @@ function activate(context) {
     // Game boilerplate
     let gameproject = vscode.commands.registerCommand(
         "extension.gameProject",
-        () => {
+        async () => {
             if (rootPath == "") return;
-            const name = vscode.workspace.name;
+            
+            let name = vscode.workspace.name;
+            let subfolder = '';
+
+            if (isLuantiGameRoot()) {
+                name = await vscode.window.showInputBox({
+                    prompt: "Enter name of the game",
+                    value: "",
+                });
+                subfolder = path.join('games',name);
+            }
+
+            
             const files = [
                 {
                     name: "game.conf",
@@ -204,7 +222,7 @@ function activate(context) {
                 },
             ];
             const folders = ["menu", "mods"];
-            makeFiles(files, folders);
+            makeFiles(files, folders, subfolder);
         },
     );
 
@@ -250,6 +268,7 @@ function activate(context) {
 
     console.log("Luanti Tools extension is active.");
 }
+
 exports.activate = activate;
 
 module.exports = {
