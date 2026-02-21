@@ -79,6 +79,44 @@ function isLuantiGameRoot() {
     return fs.existsSync(luantiExeFilePath);
 }
 
+async function pickGameFolder() {
+    let gameFolder = '';
+    const folderOptions = [
+        { label: "Root folder ('/')", value: "" },
+        { label: "Games folder ('/games')", value: "/games" },
+        { label: "Pick other folder", value: "other" }
+    ];
+
+    const pickedFolderOption = await vscode.window.showQuickPick( folderOptions, {title: 'Where do you want to create the game'});
+
+    if (!pickedFolderOption)
+    {
+        return undefined;
+    }
+
+    if (pickedFolderOption.value === 'other') {
+        // pick other folder
+        const options = {
+            canSelectMany: false,
+            openLabel: 'Select',
+            canSelectFiles: false,
+            canSelectFolders: true
+        };
+
+        const pickedFolder = await vscode.window.showOpenDialog(options);
+        if (!pickedFolder || pickedFolder.length < 1) {
+            return undefined;
+        }
+
+        gameFolder = pickedFolder[0].path;
+    }
+    else {
+        gameFolder = pickedFolderOption.value;
+    }
+
+    return gameFolder;
+}
+
 function getGameFolders() {
     var gamesFilePath = path.join(rootPath, "games");
     if (fs.existsSync(gamesFilePath))
@@ -221,37 +259,9 @@ function activate(context) {
             let gameFolder = '';
 
             // pick game folder
-            const folderOptions = [
-                { label: "Root folder ('/')", value: "" },
-                { label: "Games folder ('/games')", value: "/games" },
-                { label: "Pick other folder", value: "other" }
-            ]
-
-            const pickedFolderOption = await vscode.window.showQuickPick( folderOptions, {title: 'Where do you want to create the game'})
-
-            if (!pickedFolderOption)
-            {
+            gameFolder = await pickGameFolder();
+            if (!gameFolder) {
                 return;
-            }
-
-            if (pickedFolderOption.value === 'other') {
-                // pick other folder
-                const options = {
-                    canSelectMany: false,
-                    openLabel: 'Select',
-                    canSelectFiles: false,
-                    canSelectFolders: true
-                };
-        
-                const pickedFolder = await vscode.window.showOpenDialog(options);
-                if (!pickedFolder || pickedFolder.length < 1) {
-                    return
-                }
-
-                gameFolder = pickedFolder[0].path;
-            }
-            else {
-                gameFolder = pickedFolderOption.value;
             }
             
             // Input game name of folder is not the root
