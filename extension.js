@@ -9,7 +9,6 @@ const rootPath =
         ? vscode.workspace.workspaceFolders[0].uri.fsPath
         : "";
 
-const luantiExeFilePath = path.join(rootPath, 'bin', 'luanti.exe');        
 const doc_api_link = // TODO: Fetch latest version from a config so we arent modifying code for API version bumps
     "\n\n[View in lua_api.md](https://github.com/luanti-org/luanti/blob/5.11.0/doc/lua_api.md?plain=1#";
 const luacheckrc = `read_globals = {
@@ -71,13 +70,6 @@ function makeFiles(files, folders, subfolder = '') {
             fs.writeFileSync(fullpath, file.content);
         }
     }
-}
-
-
-// TODO: remove function
-function isLuantiGameRoot() {
-    // TODO: other check required for non windows    
-    return fs.existsSync(luantiExeFilePath);
 }
 
 async function pickGameFolder() {
@@ -392,20 +384,28 @@ function activate(context) {
     let startLuantiGame = vscode.commands.registerCommand(
         "extension.startLuantiGame",
         () => {
-            if(isLuantiGameRoot()) {
-                vscode.window.showInformationMessage('starting luanti game');
+            let executablePath = vscode.workspace
+                .getConfiguration("minetest-tools")
+                .get("gameExecutablePath");
 
-                // TODO: other file for non windows
-                child_process.execFile(luantiExeFilePath, null, (error, stdout, stderr) => {
-                    if (error) {
-                        vscode.window.showErrorMessage(`Error: ${error.message}`);
-                        return;
-                    }
-                });
+            if(!executablePath) {
+                vscode.window.showErrorMessage("The setting 'gameExecutablePath' has no value");
+                return;
             }
-            else {
-                vscode.window.showErrorMessage('Could not find luanti executable');
+
+            if (!fs.existsSync(executablePath)) {
+                vscode.window.showErrorMessage(`The file '${executablePath}' does not exist. Please set the correct file in the 'gameExecutablePath' setting.`);
+                return;
             }
+
+            vscode.window.showInformationMessage('starting luanti game');
+
+            child_process.execFile(executablePath, null, (error, stdout, stderr) => {
+                if (error) {
+                    vscode.window.showErrorMessage(`Error: ${error.message}`);
+                    return;
+                }
+            });            
         },
     );
 
