@@ -73,6 +73,7 @@ function makeFiles(files, folders, subfolder = '') {
     }
 }
 
+// TODO: remove function
 function isLuantiGameRoot() {
     // TODO: other check required for non windows    
     return fs.existsSync(luantiExeFilePath);
@@ -173,7 +174,8 @@ function activate(context) {
             if (isLuantiGameRoot()) {
                 let gameModFolders = getGameFolders().map(f => path.join(f, 'mods'));
 
-                subfolder = await vscode.window.showQuickPick([...gameModFolders, '/mods'], {title: 'Where do you want to create te mod'})
+                // TODO: fix folder names ( '/' and '\' in names)
+                subfolder = await vscode.window.showQuickPick( [...gameModFolders, '/mods'], {title: 'Where do you want to create the mod'})
 
                 name = await vscode.window.showInputBox({
                     prompt: "Enter name of the mod",
@@ -215,22 +217,63 @@ function activate(context) {
         async () => {
             if (rootPath == "") return;
             
-            let name = vscode.workspace.name;
-            let subfolder = '';
+            let gameName = vscode.workspace.name;
+            let gameFolder = '';
 
-            if (isLuantiGameRoot()) {
-                name = await vscode.window.showInputBox({
+            // pick game folder
+            const folderOptions = [
+                { label: "Root folder ('/')", value: "" },
+                { label: "Games folder ('/games')", value: "/games" },
+                { label: "Pick other folder", value: "other" }
+            ]
+
+            const pickedFolderOption = await vscode.window.showQuickPick( folderOptions, {title: 'Where do you want to create the game'})
+
+            if (!pickedFolderOption)
+            {
+                return;
+            }
+
+            if (pickedFolderOption.value === 'other') {
+                // pick other folder
+                const options = {
+                    canSelectMany: false,
+                    openLabel: 'Select',
+                    canSelectFiles: false,
+                    canSelectFolders: true
+                };
+        
+                const pickedFolder = await vscode.window.showOpenDialog(options);
+                if (!pickedFolder || pickedFolder.length < 1) {
+                    return
+                }
+
+                gameFolder = pickedFolder[0].path;
+            }
+            else {
+                gameFolder = pickedFolderOption.value;
+            }
+            
+            // Input game name of folder is not the root
+            if (gameFolder) {
+                gameName = await vscode.window.showInputBox({
                     prompt: "Enter name of the game",
                     value: "",
                 });
-                subfolder = path.join('games',name);
+
+                if (!gameName)
+                {
+                    return;
+                }
+
+                gameFolder = path.join('games',gameName);
             }
 
-            
+            // create game files
             const files = [
                 {
                     name: "game.conf",
-                    content: `name = ${name
+                    content: `name = ${gameName
                         .replace(/[_-]/g, " ")
                         .replace(/(^| )(\w)/g, function (m) {
                             return m.toUpperCase();
@@ -250,7 +293,7 @@ function activate(context) {
                 },
             ];
             const folders = ["menu", "mods"];
-            makeFiles(files, folders, subfolder);
+            makeFiles(files, folders, gameFolder);
         },
     );
 
