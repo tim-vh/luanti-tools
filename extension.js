@@ -9,8 +9,11 @@ const rootPath =
         ? vscode.workspace.workspaceFolders[0].uri.fsPath
         : "";
 
-const doc_api_link = // TODO: Fetch latest version from a config so we arent modifying code for API version bumps
-    "\n\n[View in lua_api.md](https://github.com/luanti-org/luanti/blob/5.11.0/doc/lua_api.md?plain=1#";
+const docApiUrl = vscode.workspace
+    .getConfiguration("minetest-tools")
+    .get("docApiUrl");
+
+const doc_api_link = `\n\n[View in lua_api.md](${docApiUrl})`;
 const luacheckrc = `read_globals = {
     "DIR_DELIM", "INIT",
 
@@ -101,7 +104,7 @@ async function pickGameFolder() {
             return undefined;
         }
 
-        gameFolder = path.relative(rootPath, pickedFolder[0].path);
+        gameFolder = path.relative(rootPath, pickedFolder[0].fsPath);
     }
     else {
         gameFolder = pickedFolderOption.value;
@@ -302,12 +305,12 @@ function activate(context) {
 
             // pick game folder
             gameFolder = await pickGameFolder();
-            if (!gameFolder) {
+            if (gameFolder === undefined) {
                 return;
             }
             
             // Input game name of folder is not the root
-            if (gameFolder) {
+            if (gameFolder !== "") {
                 gameName = await vscode.window.showInputBox({
                     prompt: "Enter name of the game",
                     value: "",
@@ -317,7 +320,7 @@ function activate(context) {
                     return;
                 }
 
-                gameFolder = path.join('games',gameName);
+                gameFolder = path.join(gameFolder,gameName);
             }
 
             // create game files

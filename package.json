@@ -79,6 +79,11 @@
                     "minetest-tools.gameExecutablePath": {
                         "type": "string",
                         "description": "Path to the Lunati game executable. Used for starting the game with the 'Start Luanti game' command."
+                    },
+                    "minetest-tools.docApiUrl": {
+                        "type": "string",
+                        "description": "Url to the luanti documentation api",
+                        "default":"https://github.com/luanti-org/luanti/blob/5.15.1/doc/lua_api.md?plain=1#"
                     }
                 }
             }
