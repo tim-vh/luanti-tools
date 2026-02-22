@@ -250,11 +250,11 @@ function activate(context) {
             let modFolder = '';
 
             modFolder = await pickModFolder();
-            if (!modFolder) {
+            if (modFolder === undefined) {
                 return;
             }
 
-            if (modFolder) {
+            if (modFolder !== "") {
                 modName = await vscode.window.showInputBox({
                     prompt: "Enter name of the mod",
                     value: "",
